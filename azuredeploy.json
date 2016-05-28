@@ -2,18 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
   "parameters": {
-    "_artifactsLocation": {
-      "type": "string",
-      "metadata": {
-        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
-      }
-    },
-    "_artifactsLocationSasToken": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Auto-generated token to access _artifactsLocation"
-      }
-    },
     "labName": {
       "type": "string",
       "metadata": {
@@ -77,8 +65,8 @@
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "[parameters('_artifactsLocation')]",
-    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
+    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
+    "_artifactsLocationSasToken": "",
 
     "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
     "lclab01Subnet1Name": "Subnet-1",
@@ -89,8 +77,8 @@
 
 
     "lclab01vnet01Name": "[concat(parameters('labName'), 'vnet01')]",
-    "lclab01vnetTemplate": "ExchangeHybridLab/Templates/vnet.json",
-    "lclab01vnetwithdnsTemplate": "ExchangeHybridLab/Templates/vnet-with-dns-server.json",
+    "lclab01vnetTemplate": "vnet.json",
+    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
 
     "DeployADForestConfigurationScript": "DeployADForestConfiguration.ps1",
     "DeployADForestConfigurationScriptFunction": "Main",
