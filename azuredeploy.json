@@ -4,7 +4,7 @@
   "parameters": {
     "_artifactsLocation": {
       "type": "string",
-      "defaultValue": "https://github.com/AllanBourne/HybridLab",
+      "defaultValue": "https://github.com/AllanBourne/HybridLab/blob/master",
       "metadata": {
         "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
       }
