@@ -14,6 +14,10 @@
         "description": "Auto-generated token to access _artifactsLocation"
       }
     },
+    "git_artifactslocation": {
+      "type": "string",
+      "defaultValue": "https://github.com/AllanBourne/HybridLab/blob/master/dsc.zip"
+    },
     "labprefix": {
       "type": "string"
     },
