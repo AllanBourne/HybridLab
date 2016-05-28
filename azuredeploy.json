@@ -2,19 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
   "parameters": {
-    "_artifactsLocation": {
-      "type": "string",
-      "metadata": {
-        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
-      }
-    },
-    "_artifactsLocationSasToken": {
-      "type": "securestring",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Auto-generated token to access _artifactsLocation"
-      }
-    },
     "labprefix": {
       "type": "string"
     },
@@ -85,8 +72,8 @@
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "[parameters('_artifactsLocation')]",
-    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
+    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
+    "_artifactsLocationSasToken": "",
 
     "labName": "[concat(parameters('labprefix'), uniqueString(resourceGroup().id))]",
     "DeployADForestConfigurationScript": "DeployADForestConfiguration.ps1",
