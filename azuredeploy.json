@@ -2,19 +2,31 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
   "parameters": {
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
+    },
     "labName": {
       "type": "string",
       "metadata": {
         "description": "Pre-pended to the start of all resource names"
       }
     },
-    "lclab01DomainName": {
+    "adDomainName": {
       "type": "string",
       "metadata": {
         "description": "Fully qualified domain name for Active Directory"
       }
     },
-    "lclab01DomainNameNetbios": {
+    "adDomainNetbios": {
       "type": "string",
       "metadata": {
         "description": "Netbios name for Active Directory"
@@ -32,18 +44,38 @@
         "description": "Administrative password used for all lab servers and Active Directory domain"
       }
     },
-    "lclab01Prefix": {
+    "vNetPrefix": {
       "type": "string",
       "defaultValue": "10.0.0.0/16",
       "metadata": {
         "description": "IP address space for virtual network"
       }
     },
-    "lclab01Subnet1Prefix": {
+    "SubnetPrefix": {
       "type": "string",
       "defaultValue": "10.0.0.0/24",
       "metadata": {
         "description": "IP address space for subnet"
+      }
+    },
+    "ExchangeVMSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2",
+      "allowedValues": [
+        "Standard_D2"
+      ],
+      "metadata": {
+        "description": "Exchange VM Size"
+      }
+    },
+    "DomainControllerVMSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2",
+      "allowedValues": [
+        "Standard_D2"
+      ],
+      "metadata": {
+        "description": "Domain Controller VM Size"
       }
     },
     "lclab01Type": {
@@ -65,20 +97,20 @@
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
-    "_artifactsLocationSasToken": "",
+    "_artifactsLocation": "[parameters('_artifactsLocation')]",
+    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
 
     "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
     "lclab01Subnet1Name": "Subnet-1",
 
-    "adDomainDN": "[replace(parameters('lclab01DomainName'),'.','DC=')]",
+    "adDomainDN": "[replace(parameters('adDomainName'),'.','DC=')]",
 
     "lclab01DomainJoinOptions": "3",
 
 
     "lclab01vnet01Name": "[concat(parameters('labName'), 'vnet01')]",
-    "lclab01vnetTemplate": "vnet.json",
-    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
+    "lclab01vnetTemplate": "ExchangeHybridLab/Templates/vnet.json",
+    "lclab01vnetwithdnsTemplate": "ExchangeHybridLab/Templates/vnet-with-dns-server.json",
 
     "DeployADForestConfigurationScript": "DeployADForestConfiguration.ps1",
     "DeployADForestConfigurationScriptFunction": "Main",
@@ -95,12 +127,11 @@
     "lclab01adds01OSDiskName": "[concat(variables('lclab01adds01Name'), 'OSDisk')]",
     "lclab01adds01DataDiskName": "[concat(variables('lclab01adds01Name'), 'DataDisk')]",
     "lclab01adds01DataDiskSize": "20",
-    "lclab01adds01VmSize": "Standard_D2",
     "lclab01adds01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('lclab01vnet01Name'))]",
     "lclab01adds01SubnetRef": "[concat(variables('lclab01adds01VnetID'), '/subnets/', variables('lclab01Subnet1Name'))]",
     "lclab01adds01StorageAccountContainerName": "vhds",
     "lclab01adds01NicName": "[concat(variables('lclab01adds01Name'), 'NetworkInterface')]",
-    "lclab01adds01IPAddress": "[replace(parameters('lclab01Subnet1Prefix'),'.0/','.4/')]",
+    "lclab01adds01IPAddress": "[substring(replace(parameters('SubnetPrefix'),'.0/','.4/'),0,sub(length(parameters('SubnetPrefix')),3))]",
     "lclab01adds01PublicName": "[concat(variables('lclab01adds01Name'), 'Public')]",
     "lclab01adds01PublicDnsName": "[variables('lclab01adds01Name')]",
 
@@ -111,7 +142,6 @@
     "lclab01exch01OSDiskName": "[concat(variables('lclab01exch01Name'), 'OSDisk')]",
     "lclab01exch01DataDiskName": "[concat(variables('lclab01exch01Name'), 'DataDisk')]",
     "lclab01exch01DataDiskSize": "20",
-    "lclab01exch01VmSize": "Standard_D2",
     "lclab01exch01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('lclab01vnet01Name'))]",
     "lclab01exch01SubnetRef": "[concat(variables('lclab01exch01VnetID'), '/subnets/', variables('lclab01Subnet1Name'))]",
     "lclab01exch01StorageAccountContainerName": "vhds",
@@ -152,13 +182,13 @@
             "value": "[variables('lclab01vnet01Name')]"
           },
           "virtualNetworkAddressRange": {
-            "value": "[parameters('lclab01Prefix')]"
+            "value": "[parameters('vNetPrefix')]"
           },
           "subnetName": {
             "value": "[variables('lclab01Subnet1Name')]"
           },
           "subnetRange": {
-            "value": "[parameters('lclab01subnet1prefix')]"
+            "value": "[parameters('SubnetPrefix')]"
           }
         }
       }
@@ -223,7 +253,7 @@
       },
       "properties": {
         "hardwareProfile": {
-          "vmSize": "[variables('lclab01adds01VmSize')]"
+          "vmSize": "[parameters('DomainControllerVMSize')]"
         },
         "osProfile": {
           "computerName": "[variables('lclab01adds01Name')]",
@@ -291,8 +321,8 @@
                 "function": "[variables('DeployADForestConfigurationScriptFunction')]"
               },
               "configurationArguments": {
-                "domainName": "[parameters('lclab01DomainName')]",
-                "domainNameNetbios": "[parameters('lclab01DomainNameNetbios')]",
+                "domainName": "[parameters('adDomainName')]",
+                "domainNameNetbios": "[parameters('adDomainNetbios')]",
                 "domainDN": "[variables('adDomainDN')]",
                 "sourcePath": "[variables('InstallAADConnectSourcePath')]",
                 "targetPath": "[variables('InstallAADConnectTargetPath')]"
@@ -337,13 +367,13 @@
             "value": "[variables('lclab01vnet01Name')]"
           },
           "virtualNetworkAddressRange": {
-            "value": "[parameters('lclab01Prefix')]"
+            "value": "[parameters('vNetPrefix')]"
           },
           "subnetName": {
             "value": "[variables('lclab01Subnet1Name')]"
           },
           "subnetRange": {
-            "value": "[parameters('lclab01subnet1prefix')]"
+            "value": "[parameters('SubnetPrefix')]"
           },
           "DNSServerAddress": {
             "value": [
@@ -475,7 +505,7 @@
       },
       "properties": {
         "hardwareProfile": {
-          "vmSize": "[variables('lclab01exch01VmSize')]"
+          "vmSize": "[parameters('ExchangeVMSize')]"
         },
         "osProfile": {
           "computerName": "[variables('lclab01exch01Name')]",
@@ -536,9 +566,9 @@
             "type": "JsonADDomainExtension",
             "typeHandlerVersion": "1.0",
             "settings": {
-              "Name": "[parameters('lclab01DomainName')]",
+              "Name": "[parameters('adDomainName')]",
               "OUPath": "[concat('OU=Servers,', variables('adDomainDN'))]",
-              "User": "[concat(parameters('labAdminUserName'), '@', parameters('lclab01DomainName'))]",
+              "User": "[concat(parameters('labAdminUserName'), '@', parameters('adDomainName'))]",
               "Restart": "true",
               "Options": "[variables('lclab01DomainJoinOptions')]"
             },
@@ -572,8 +602,8 @@
                 "function": "[variables('InstallExchange2013ConfigurationScriptFunction')]"
               },
               "configurationArguments": {
-                "domainName": "[parameters('lclab01DomainName')]",
-                "domainNameNetbios": "[parameters('lclab01DomainNameNetbios')]",
+                "domainName": "[parameters('adDomainName')]",
+                "domainNameNetbios": "[parameters('adDomainNetbios')]",
                 "ExchangeOrgName": "[variables('lclab01Name')]"
               },
               "configurationData": {
@@ -597,7 +627,7 @@
     },
     {
       "type": "Microsoft.Network/dnszones",
-      "name": "[parameters('lclab01DomainName')]",
+      "name": "[parameters('adDomainName')]",
       "apiVersion": "2016-04-01",
       "location": "global",
       "tags": {
@@ -607,7 +637,7 @@
     },
     {
       "type": "Microsoft.Network/dnszones/CNAME",
-      "name": "[concat(parameters('lclab01DomainName'), concat('/autodiscover'))]",
+      "name": "[concat(parameters('adDomainName'), concat('/autodiscover'))]",
       "apiVersion": "2016-04-01",
       "location": "global",
       "tags": {
@@ -621,7 +651,7 @@
           }
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/dnszones/', parameters('lclab01DomainName'))]"
+        "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
       ]
     }
 
