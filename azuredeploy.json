@@ -4,13 +4,13 @@
   "parameters": {
     "_artifactsLocation": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
       "metadata": {
         "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
       }
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
+      "defaultValue": "",
       "metadata": {
         "description": "Auto-generated token to access _artifactsLocation"
       }
@@ -84,6 +84,9 @@
   },
   "variables": {
     "apiVersion": "2016-04-01",
+
+    "_artifactsLocation": "[parameters('_artifactsLocation')]",
+    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
 
     "labName": "[concat(parameters('labprefix'), uniqueString(resourceGroup().id))]",
     "DeployADForestConfigurationScript": "DeployADForestConfiguration.ps1",
@@ -298,7 +301,7 @@
             "settings": {
               "wmfVersion": "latest",
               "configuration": {
-                "url": "[concat(parameters('_artifactsLocation'), '/', 'dsc.zip')]",
+                "url": "[concat(variables('_artifactsLocation'), '/', 'dsc.zip')]",
                 "script": "[variables('DeployADForestConfigurationScript')]",
                 "function": "[variables('DeployADForestConfigurationScriptFunction')]"
               },
@@ -322,7 +325,7 @@
                   "password": "[parameters('labAdminPassword')]"
                 }
               },
-              "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
+              "configurationUrlSasToken": "[variables('_artifactsLocationSasToken')]"
             }
           }
         }
@@ -579,7 +582,7 @@
             "settings": {
               "wmfVersion": "latest",
               "configuration": {
-                "url": "[concat(parameters('_artifactsLocation'), '/', 'dsc.zip')]",
+                "url": "[concat(variables('_artifactsLocation'), '/', 'dsc.zip')]",
                 "script": "[variables('InstallExchange2013ConfigurationScript')]",
                 "function": "[variables('InstallExchange2013ConfigurationScriptFunction')]"
               },
@@ -601,7 +604,7 @@
                   "password": "[parameters('labAdminPassword')]"
                 }
               },
-              "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
+              "configurationUrlSasToken": "[variables('_artifactsLocationSasToken')]"
             }
           }
         }
