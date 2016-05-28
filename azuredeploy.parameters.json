@@ -3,16 +3,22 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "labName": {
-            "value": "mylab"
+            "value": "lclab09"
         },
-        "lclab01DomainName": {
-            "value": "mylab.contoso.com"
+        "adDomainName": {
+            "value": "lab09.lucisit.net"
         },
-        "lclab01DomainNameNetbios": {
-            "value": "mylab"
+        "adDomainNetbios": {
+            "value": "lab09"
         },
         "labAdminUserName": {
             "value": "lcadmin"
+        },
+        "vNetPrefix": {
+            "value": "10.9.0.0/16"
+        },
+        "SubnetPrefix": {
+            "value": "10.9.0.0/24"
         }
 
     }
