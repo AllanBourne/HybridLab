@@ -724,10 +724,12 @@
       },
       "properties": {
         "TTL": 3600,
-        "MXRecords": {
-          "preference": "10",
-          "exchange": "[concat(replace(parameters('adDomainName'),'.','-'),'.mail.protection.outlook.com')]"
-        }
+        "MXRecords": [
+            {
+            "preference": "10",
+            "exchange": "[concat(replace(parameters('adDomainName'),'.','-'),'.mail.protection.outlook.com')]"
+            }
+        ]    
       },
       "dependsOn": [
         "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
@@ -743,9 +745,11 @@
       },
       "properties": {
         "TTL": 3600,
-        "TXTRecords": {
+        "TXTRecords": [
+            {
           "value": "v=spf1 include:spf.protection.outlook.com -all"
-        }
+            }
+        ]    
       },
       "dependsOn": [
         "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
