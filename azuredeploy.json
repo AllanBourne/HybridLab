@@ -88,8 +88,8 @@
     "lclab01Subnet1Name": "Subnet-1",
 
     "lclab01vnet01Name": "[concat(parameters('labprefix'), 'vnet01')]",
-    "lclab01vnetTemplate": "/vnet.json",
-    "lclab01vnetwithdnsTemplate": "/vnet-with-dns-server.json",
+    "lclab01vnetTemplate": "vnet.json",
+    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
 
 
     "lclab01adds01Name": "[concat(parameters('labprefix'), 'adds01')]",
