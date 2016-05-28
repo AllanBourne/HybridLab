@@ -91,7 +91,7 @@
     "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
     "lclab01Subnet1Name": "Subnet-1",
 
-    "adDomainDN": "[replace(parameters('adDomainName'),'.','DC=')]",
+    "adDomainDN": "[concat('DC=',replace(parameters('adDomainName'),'.','DC='))]",
 
     "lclab01DomainJoinOptions": "3",
 
