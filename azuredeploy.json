@@ -2,13 +2,62 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
   "parameters": {
-    "labprefix": {
-      "type": "string"
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
     },
-    "labID": {
-      "type": "string"
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
     },
-
+    "labName": {
+      "type": "string",
+      "metadata": {
+        "description": "Pre-pended to the start of all resource names"
+      }
+    },
+    "lclab01DomainName": {
+      "type": "string",
+      "metadata": {
+        "description": "Fully qualified domain name for Active Directory"
+      }
+    },
+    "lclab01DomainNameNetbios": {
+      "type": "string",
+      "metadata": {
+        "description": "Netbios name for Active Directory"
+      }
+    },
+    "labAdminUserName": {
+      "type": "string",
+      "metadata": {
+        "description": "Administrative username used for all lab servers and Active Directory domain"
+      }
+    },
+    "labAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Administrative password used for all lab servers and Active Directory domain"
+      }
+    },
+    "lclab01Prefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "IP address space for virtual network"
+      }
+    },
+    "lclab01Subnet1Prefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "IP address space for subnet"
+      }
+    },
     "lclab01Type": {
       "type": "string",
       "defaultValue": "Standard_LRS",
@@ -18,64 +67,31 @@
         "Standard_GRS",
         "Standard_RAGRS",
         "Premium_LRS"
-      ]
-    },
-    "lclab01DomainName": {
-      "type": "string"
-    },
-    "lclab01DomainNameNetbios": {
-      "type": "string"
-    },
-    "lclab01DN": {
-      "type": "string"
-    },
-    "lclab01DomainJoinOptions": {
-      "type": "string",
-      "defaultValue": "3"
-    },
-    "labAdminUserName": {
-      "type": "string"
-    },
-    "labAdminPassword": {
-      "type": "securestring"
-    },
-    "lclab01adds01WindowsOSVersion": {
-      "type": "string",
-      "defaultValue": "2012-R2-Datacenter",
-      "allowedValues": [
-        "2008-R2-SP1",
-        "2012-Datacenter",
-        "2012-R2-Datacenter",
-        "Windows-Server-Technical-Preview"
-      ]
-    },
-    "lclab01exch01WindowsOSVersion": {
-      "type": "string",
-      "defaultValue": "2012-R2-Datacenter",
-      "allowedValues": [
-        "2008-R2-SP1",
-        "2012-Datacenter",
-        "2012-R2-Datacenter",
-        "Windows-Server-Technical-Preview"
-      ]
-    },
-    "lclab01Prefix": {
-      "type": "string",
-      "defaultValue": "10.0.0.0/16"
-    },
-    "lclab01Subnet1Prefix": {
-      "type": "string",
-      "defaultValue": "10.0.0.0/24"
+      ],
+      "metadata": {
+        "description": "Storage type"
+      }
     }
 
   },
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
-    "_artifactsLocationSasToken": "",
+    "_artifactsLocation": "[parameters('_artifactsLocation')]",
+    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
 
-    "labName": "[concat(parameters('labprefix'), uniqueString(resourceGroup().id))]",
+    "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
+    "lclab01Subnet1Name": "Subnet-1",
+
+    "adDomainDN": "[replace(parameters('lclab01DomainName'),'.','DC=')]",
+
+    "lclab01DomainJoinOptions": "3",
+
+
+    "lclab01vnet01Name": "[concat(parameters('labName'), 'vnet01')]",
+    "lclab01vnetTemplate": "ExchangeHybridLab/Templates/vnet.json",
+    "lclab01vnetwithdnsTemplate": "ExchangeHybridLab/Templates/vnet-with-dns-server.json",
+
     "DeployADForestConfigurationScript": "DeployADForestConfiguration.ps1",
     "DeployADForestConfigurationScriptFunction": "Main",
     "InstallExchange2013ConfigurationScript": "InstallExchange2013Configuration.ps1",
@@ -84,15 +100,8 @@
     "InstallAADConnectSourcePath": "https://download.microsoft.com/download/B/0/0/B00291D0-5A83-4DE7-86F5-980BC00DE05A/AzureADConnect.msi",
     "InstallAADConnectTargetPath": "f:\\downloads\\AzureADConnect.msi",
 
-    "lclab01Name": "[concat(parameters('labprefix'), uniqueString(resourceGroup().id))]",
-    "lclab01Subnet1Name": "Subnet-1",
-
-    "lclab01vnet01Name": "[concat(parameters('labprefix'), 'vnet01')]",
-    "lclab01vnetTemplate": "vnet.json",
-    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
-
-
-    "lclab01adds01Name": "[concat(parameters('labprefix'), 'adds01')]",
+    "lclab01adds01Name": "[concat(parameters('labName'), 'adds01')]",
+    "lclab01adds01WindowsOSVersion": "2012-R2-Datacenter",
     "lclab01adds01ImagePublisher": "MicrosoftWindowsServer",
     "lclab01adds01ImageOffer": "WindowsServer",
     "lclab01adds01OSDiskName": "[concat(variables('lclab01adds01Name'), 'OSDisk')]",
@@ -103,11 +112,12 @@
     "lclab01adds01SubnetRef": "[concat(variables('lclab01adds01VnetID'), '/subnets/', variables('lclab01Subnet1Name'))]",
     "lclab01adds01StorageAccountContainerName": "vhds",
     "lclab01adds01NicName": "[concat(variables('lclab01adds01Name'), 'NetworkInterface')]",
-    "lclab01adds01IPAddress": "[concat('10.', parameters('labID'), '.0.4')]",
+    "lclab01adds01IPAddress": "[replace(parameters('lclab01Subnet1Prefix'),'.0/','.4/')]",
     "lclab01adds01PublicName": "[concat(variables('lclab01adds01Name'), 'Public')]",
     "lclab01adds01PublicDnsName": "[variables('lclab01adds01Name')]",
 
-    "lclab01exch01Name": "[concat(parameters('labprefix'), 'exch01')]",
+    "lclab01exch01Name": "[concat(parameters('labName'), 'exch01')]",
+    "lclab01exch01WindowsOSVersion": "2012-R2-Datacenter",
     "lclab01exch01ImagePublisher": "MicrosoftWindowsServer",
     "lclab01exch01ImageOffer": "WindowsServer",
     "lclab01exch01OSDiskName": "[concat(variables('lclab01exch01Name'), 'OSDisk')]",
@@ -236,7 +246,7 @@
           "imageReference": {
             "publisher": "[variables('lclab01adds01ImagePublisher')]",
             "offer": "[variables('lclab01adds01ImageOffer')]",
-            "sku": "[parameters('lclab01adds01WindowsOSVersion')]",
+            "sku": "[variables('lclab01adds01WindowsOSVersion')]",
             "version": "latest"
           },
           "osDisk": {
@@ -295,7 +305,7 @@
               "configurationArguments": {
                 "domainName": "[parameters('lclab01DomainName')]",
                 "domainNameNetbios": "[parameters('lclab01DomainNameNetbios')]",
-                "domainDN": "[parameters('lclab01DN')]",
+                "domainDN": "[variables('adDomainDN')]",
                 "sourcePath": "[variables('InstallAADConnectSourcePath')]",
                 "targetPath": "[variables('InstallAADConnectTargetPath')]"
               },
@@ -488,7 +498,7 @@
           "imageReference": {
             "publisher": "[variables('lclab01exch01ImagePublisher')]",
             "offer": "[variables('lclab01exch01ImageOffer')]",
-            "sku": "[parameters('lclab01exch01WindowsOSVersion')]",
+            "sku": "[variables('lclab01exch01WindowsOSVersion')]",
             "version": "latest"
           },
           "osDisk": {
@@ -539,10 +549,10 @@
             "typeHandlerVersion": "1.0",
             "settings": {
               "Name": "[parameters('lclab01DomainName')]",
-              "OUPath": "[concat('OU=Servers,', parameters('lclab01DN'))]",
+              "OUPath": "[concat('OU=Servers,', variables('adDomainDN'))]",
               "User": "[concat(parameters('labAdminUserName'), '@', parameters('lclab01DomainName'))]",
               "Restart": "true",
-              "Options": "[parameters('lclab01DomainJoinOptions')]"
+              "Options": "[variables('lclab01DomainJoinOptions')]"
             },
             "protectedsettings": {
               "Password": "[parameters('labAdminPassword')]"
