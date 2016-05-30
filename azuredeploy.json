@@ -98,8 +98,8 @@
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "",
-    "_artifactsLocationSasToken": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
+    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
+    "_artifactsLocationSasToken": "",
     "lclab01vnetTemplate": "vnet.json",
     "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
 
