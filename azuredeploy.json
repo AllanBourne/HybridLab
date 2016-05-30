@@ -601,7 +601,7 @@
                 "domainName": "[parameters('adDomainName')]",
                 "domainNameNetbios": "[parameters('adDomainNetbios')]",
                 "ExchangeOrgName": "[parameters('labName')]",
-                "NodeName": "variables('lclab01exch01Name')",
+                "NodeName": "[variables('lclab01exch01Name')]",
                 "ExchangeProductKey": "[parameters('ExchangeProductKey')]"
 
               },
