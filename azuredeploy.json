@@ -2,6 +2,18 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
   "parameters": {
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
+    },
     "labName": {
       "type": "string",
       "metadata": {
@@ -72,6 +84,13 @@
         "description": "Domain Controller VM Size"
       }
     },
+    "ExchangeProductKey": {
+      "type": "string",
+      "defaultValue": "1234-1234-1234-1234",
+      "metadata": {
+        "description": "Exchange Server 2013 Product Key"
+      }
+    },
     "lclab01Type": {
       "type": "string",
       "defaultValue": "Standard_LRS",
@@ -91,10 +110,10 @@
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
-    "_artifactsLocationSasToken": "",
-    "lclab01vnetTemplate": "vnet.json",
-    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
+    "_artifactsLocation": "[parameters('_artifactsLocation')]",
+    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
+    "lclab01vnetTemplate": "ExchangeHybridLab/Templates/vnet.json",
+    "lclab01vnetwithdnsTemplate": "ExchangeHybridLab/Templates/vnet-with-dns-server.json",
 
     "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
     "lclab01Subnet1Name": "Subnet-1",
@@ -581,8 +600,8 @@
           "properties": {
             "publisher": "Microsoft.Powershell",
             "type": "DSC",
-            "typeHandlerVersion": "2.17",
-            "autoUpgradeMinorVersion": true,
+            "typeHandlerVersion": "2.15",
+            "autoUpgradeMinorVersion": false,
             "settings": {
               "wmfVersion": "latest",
               "configuration": {
@@ -593,7 +612,10 @@
               "configurationArguments": {
                 "domainName": "[parameters('adDomainName')]",
                 "domainNameNetbios": "[parameters('adDomainNetbios')]",
-                "ExchangeOrgName": "[parameters('labName')]"
+                "ExchangeOrgName": "[parameters('labName')]",
+                "NodeName": "variables('lclab01exch01Name')",
+                "ExchangeProductKey": "[parameters('ExchangeProductKey')]"
+
               },
               "configurationData": {
               },
@@ -725,11 +747,11 @@
       "properties": {
         "TTL": 3600,
         "MXRecords": [
-            {
+          {
             "preference": "10",
             "exchange": "[concat(replace(parameters('adDomainName'),'.','-'),'.mail.protection.outlook.com')]"
-            }
-        ]    
+          }
+        ]
       },
       "dependsOn": [
         "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
@@ -746,10 +768,10 @@
       "properties": {
         "TTL": 3600,
         "TXTRecords": [
-            {
-          "value": "v=spf1 include:spf.protection.outlook.com -all"
-            }
-        ]    
+          {
+            "value": "v=spf1 include:spf.protection.outlook.com -all"
+          }
+        ]
       },
       "dependsOn": [
         "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
