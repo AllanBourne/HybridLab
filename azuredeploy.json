@@ -13,7 +13,7 @@
       "type": "string",
       "defaultValue": "myexlab.mydomain.com",
       "metadata": {
-        "description": "Fully qualified domain name for Active Directory"
+        "description": "Fully qualified domain name for Active Directory and Office 365 (must be a valid external domain not already assigned to a tenant)"
       }
     },
     "adDomainNetbios": {
