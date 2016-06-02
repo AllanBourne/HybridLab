@@ -6,13 +6,13 @@
 <ul>
 <li>Azure Resource Group
 <ul>
-<li>VNet</li>
-<li>Subnet</li>
-<li>Firewall</li>
+<li>VNet, Subnet, Public IP</li>
+<li>Firewall Rules</li>
+<li>2 x Server 2012 R2 Virtual Machine</li>
 </ul>
 </li>
-<li>Domain Controller - Server 2012 R2</li>
-<li>Exchange 2013 - Server 2012 R2</li>
+<li>Domain Controller</li>
+<li>Exchange 2013</li>
 </ul>
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAllanBourne%2FHybridLab%2Fmaster%2Fazuredeploy.json" target="_blank">
