@@ -1,6 +1,6 @@
 # Exchange Hybrid Lab
 
-<p>Exchange 2013 lab designied for hybrid deployment with Office 356</p>
+<p>Exchange 2013 lab designied for hybrid deployment with Office 365</p>
 
 <p>Includes the following components...</p>
 <ul>
