@@ -5,6 +5,13 @@
 <p>Includes the following components...</p>
 <ul>
 <li>Azure Resource Group</li>
+<li>
+<ul>
+<li>VNet</li>
+<li>Subnet</li>
+<li>Firewall</li>
+</ul>
+</li>
 <li>Domain Controller - Server 2012 R2</li>
 <li>Exchange 2013 - Server 2012 R2</li>
 </ul>
