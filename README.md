@@ -4,15 +4,10 @@
 
 <p>Includes the following components...</p>
 <ul>
-<li>Azure Resource Group
-<ul>
-<li>VNet, Subnet, Public IP</li>
-<li>Firewall Rules</li>
-<li>2 x Server 2012 R2 Virtual Machine</li>
-</ul>
-</li>
-<li>Domain Controller</li>
-<li>Exchange 2013</li>
+<li>1 x Domain Controller (includes AAD Connect install) </li>
+<li>1 x Exchange 2013 (includes Azure AD tools install</li>
+<li>Azure Public DNS Zone</li>
+<li>Relevant Azure infrastructure components including network, firewall rules etc</li>
 </ul>
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAllanBourne%2FHybridLab%2Fmaster%2Fazuredeploy.json" target="_blank">
