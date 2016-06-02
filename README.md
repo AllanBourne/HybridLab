@@ -1,6 +1,13 @@
 # Exchange Hybrid Lab
 
-<p>Includes 1 domain controller, 1 Exchange 2013 Server, corresponding firewall rules and external IP</p>
+<p>Exchange 2013 lab designied for hybrid deployment with Office 356</p>
+
+<p>Includes the following components...</p>
+<ul>
+<li>Azure Resource Group</li>
+<li>Domain Controller - Server 2012 R2</li>
+<li>Exchange 2013 - Server 2012 R2</li>
+</ul>
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAllanBourne%2FHybridLab%2Fmaster%2Fazuredeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
