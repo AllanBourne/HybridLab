@@ -4,8 +4,7 @@
 
 <p>Includes the following components...</p>
 <ul>
-<li>Azure Resource Group</li>
-<li>
+<li>Azure Resource Group
 <ul>
 <li>VNet</li>
 <li>Subnet</li>
