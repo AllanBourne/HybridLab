@@ -2,6 +2,18 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
   "parameters": {
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
+    },
     "labName": {
       "type": "string",
       "metadata": {
@@ -98,10 +110,10 @@
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
-    "_artifactsLocationSasToken": "",
-    "lclab01vnetTemplate": "vnet.json",
-    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
+    "_artifactsLocation": "[parameters('_artifactsLocation')]",
+    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
+    "lclab01vnetTemplate": "ExchangeHybridLab/Templates/vnet.json",
+    "lclab01vnetwithdnsTemplate": "ExchangeHybridLab/Templates/vnet-with-dns-server.json",
 
     "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
     "lclab01Subnet1Name": "Subnet-1",
@@ -113,8 +125,12 @@
     "DeployADForestConfigurationScriptFunction": "Main",
     "InstallExchange2013ConfigurationScript": "InstallExchange2013Configuration.ps1",
     "InstallExchange2013ConfigurationScriptFunction": "Main",
-    "InstallAADConnectSourcePath": "https://download.microsoft.com/download/B/0/0/B00291D0-5A83-4DE7-86F5-980BC00DE05A/AzureADConnect.msi",
-    "InstallAADConnectTargetPath": "f:\\downloads\\AzureADConnect.msi",
+    "SourcePathAADConnect": "https://download.microsoft.com/download/B/0/0/B00291D0-5A83-4DE7-86F5-980BC00DE05A/AzureADConnect.msi",
+    "TargetPathAADConnect": "AzureADConnect.msi",
+    "SourcePathSignInAssistant": "https://download.microsoft.com/download/5/0/1/5017D39B-8E29-48C8-91A8-8D0E4968E6D4/en/msoidcli_64.msi",
+    "TargetPathSignInAssistant": "msoidcli_64.msi",
+    "SourcePathAADPS": "https://bposast.vo.msecnd.net/MSOPMW/Current/amd64/AdministrationConfig-en.msi",
+    "TargetPathAADPS": "AdministrationConfig-en.msi",
 
     "lclab01adds01Name": "[concat(parameters('labName'), 'adds01')]",
     "lclab01adds01WindowsOSVersion": "2012-R2-Datacenter",
@@ -242,6 +258,7 @@
       "apiVersion": "2015-06-15",
       "dependsOn": [
         "[concat('Microsoft.Storage/storageAccounts/', variables('lclab01Name'))]",
+        "[concat('Microsoft.Network/networkInterfaces/', variables('lclab01adds01NicName'))]",
         "Microsoft.Resources/deployments/lclab01vnet01"
       ],
       "tags": {
@@ -320,8 +337,8 @@
                 "domainName": "[parameters('adDomainName')]",
                 "domainNameNetbios": "[parameters('adDomainNetbios')]",
                 "domainDN": "[variables('adDomainDN')]",
-                "sourcePath": "[variables('InstallAADConnectSourcePath')]",
-                "targetPath": "[variables('InstallAADConnectTargetPath')]"
+                "SourcePathAADConnect": "[variables('SourcePathAADConnect')]",
+                "TargetPathAADConnect": "[variables('TargetPathAADConnect')]"
               },
               "configurationData": {
               },
@@ -591,7 +608,7 @@
             "typeHandlerVersion": "2.15",
             "autoUpgradeMinorVersion": false,
             "settings": {
-              "wmfVersion": "latest",
+              "wmfVersion": "4.0",
               "configuration": {
                 "url": "[concat(variables('_artifactsLocation'), '/', 'dsc.zip')]",
                 "script": "[variables('InstallExchange2013ConfigurationScript')]",
@@ -601,9 +618,11 @@
                 "domainName": "[parameters('adDomainName')]",
                 "domainNameNetbios": "[parameters('adDomainNetbios')]",
                 "ExchangeOrgName": "[parameters('labName')]",
-                "NodeName": "[variables('lclab01exch01Name')]",
-                "ExchangeProductKey": "[parameters('ExchangeProductKey')]"
-
+                "ExchangeProductKey": "[parameters('ExchangeProductKey')]",
+                "SourcePathSignInAssistant": "[variables('SourcePathSignInAssistant')]",
+                "targetPathSignInAssistant": "[variables('TargetPathSignInAssistant')]",
+                "SourcePathAADPS": "[variables('SourcePathAADPS')]",
+                "TargetPathAADPS": "[variables('TargetPathAADPS')]"
               },
               "configurationData": {
               },
@@ -645,7 +664,7 @@
       "properties": {
         "TTL": 3600,
         "CNAMERecord": {
-          "cname": "[concat(variables('lclab01exch01Name'),'.westus.cloudapp.azure.com')]"
+          "cname": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lclab01exch01PublicName'))).dnsSettings.fqdn]"
         }
       },
       "dependsOn": [
@@ -681,7 +700,7 @@
       "properties": {
         "TTL": 3600,
         "CNAMERecord": {
-          "cname": "[concat(variables('lclab01exch01Name'),'.westus.cloudapp.azure.com')]"
+          "cname": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lclab01exch01PublicName'))).dnsSettings.fqdn]"
         }
       },
       "dependsOn": [
@@ -748,7 +767,7 @@
     {
       "type": "Microsoft.Network/dnszones/TXT",
       "name": "[concat(parameters('adDomainName'),'/@')]",
-      "apiVersion": "2016-04-01",
+      "apiVersion": "2015-05-04-preview",
       "location": "global",
       "tags": {
         "displayName": "PublicDNS-TXT"
@@ -766,6 +785,26 @@
       ]
     }
   ],
-    "outputs": {
+  "outputs": {
+    "DNS-Name-Server-1": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[0]]"
+    },
+    "DNS-Name-Server-2": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[1]]"
+    },
+    "DNS-Name-Server-3": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[2]]"
+    },
+    "DNS-Name-Server-4": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[3]]"
+    },
+    "Exchange-External-Address": {
+      "type": "string",
+      "value": "[concat(variables('lclab01exch01Name'), '.', parameters('adDomainName'))]"
     }
+  }
 }
