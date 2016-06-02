@@ -54,9 +54,6 @@
       "type": "string",
       "defaultValue": "Standard_D2",
       "allowedValues": [
-        "A1",
-        "A2",
-        "A3",
         "Standard_D2"
       ],
       "metadata": {
@@ -67,9 +64,6 @@
       "type": "string",
       "defaultValue": "Standard_D2",
       "allowedValues": [
-        "A1",
-        "A2",
-        "A3",
         "Standard_D2"
       ],
       "metadata": {
