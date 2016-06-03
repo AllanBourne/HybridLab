@@ -4,21 +4,18 @@
   "parameters": {
     "labName": {
       "type": "string",
-      "defaultValue": "myExLab",
       "metadata": {
         "description": "Pre-pended to the start of all resource names"
       }
     },
     "adDomainName": {
       "type": "string",
-      "defaultValue": "myexlab.mydomain.com",
       "metadata": {
         "description": "Fully qualified domain name for Active Directory and Office 365 (must be a valid external domain not already assigned to a tenant)"
       }
     },
     "adDomainNetbios": {
       "type": "string",
-      "defaultValue": "myexlab",
       "metadata": {
         "description": "Netbios name for Active Directory"
       }
