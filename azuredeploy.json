@@ -2,6 +2,18 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
   "parameters": {
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
+    },
     "labName": {
       "type": "string",
       "metadata": {
@@ -69,7 +81,7 @@
     },
     "ExchangeProductKey": {
       "type": "string",
-      "defaultValue": "1234-1234-1234-1234",
+      "defaultValue": "12345-12345-12345-12345",
       "metadata": {
         "description": "Exchange Server 2013 Product Key"
       }
@@ -93,10 +105,10 @@
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
-    "_artifactsLocationSasToken": "",
-    "lclab01vnetTemplate": "vnet.json",
-    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
+    "_artifactsLocation": "[parameters('_artifactsLocation')]",
+    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
+    "lclab01vnetTemplate": "ExchangeHybridLab/Templates/vnet.json",
+    "lclab01vnetwithdnsTemplate": "ExchangeHybridLab/Templates/vnet-with-dns-server.json",
 
     "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
     "lclab01Subnet1Name": "Subnet-1",
@@ -112,8 +124,10 @@
     "TargetPathAADConnect": "AzureADConnect.msi",
     "SourcePathSignInAssistant": "https://download.microsoft.com/download/5/0/1/5017D39B-8E29-48C8-91A8-8D0E4968E6D4/en/msoidcli_64.msi",
     "TargetPathSignInAssistant": "msoidcli_64.msi",
+    "GUIDSignInAssistant": "D8AB93B0-6FBF-44A0-971F-C0669B5AE6DD",
     "SourcePathAADPS": "https://bposast.vo.msecnd.net/MSOPMW/Current/amd64/AdministrationConfig-en.msi",
     "TargetPathAADPS": "AdministrationConfig-en.msi",
+    "ExchangeFQDN": "[concat(variables('lclab01exch01Name'), '.', parameters('adDomainName'))]",
 
     "lclab01adds01Name": "[concat(parameters('labName'), 'adds01')]",
     "lclab01adds01WindowsOSVersion": "2012-R2-Datacenter",
@@ -389,7 +403,7 @@
         "displayName": "lclab01exch01Public"
       },
       "properties": {
-        "publicIPAllocationMethod": "Dynamic",
+        "publicIPAllocationMethod": "Static",
         "dnsSettings": {
           "domainNameLabel": "[variables('lclab01exch01PublicDnsName')]"
         }
@@ -588,7 +602,7 @@
           "properties": {
             "publisher": "Microsoft.Powershell",
             "type": "DSC",
-            "typeHandlerVersion": "2.15",
+            "typeHandlerVersion": "2.18",
             "autoUpgradeMinorVersion": false,
             "settings": {
               "wmfVersion": "4.0",
@@ -602,10 +616,16 @@
                 "domainNameNetbios": "[parameters('adDomainNetbios')]",
                 "ExchangeOrgName": "[parameters('labName')]",
                 "ExchangeProductKey": "[parameters('ExchangeProductKey')]",
+                "ExchangeFQDN": "[variables('ExchangeFQDN')]",
                 "SourcePathSignInAssistant": "[variables('SourcePathSignInAssistant')]",
                 "targetPathSignInAssistant": "[variables('TargetPathSignInAssistant')]",
+                "GUIDSignInAssistant": "[variables('GUIDSignInAssistant')]",
                 "SourcePathAADPS": "[variables('SourcePathAADPS')]",
-                "TargetPathAADPS": "[variables('TargetPathAADPS')]"
+                "TargetPathAADPS": "[variables('TargetPathAADPS')]",
+                "PublicZoneNS1": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[0]]",
+                "PublicZoneNS2": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[1]]",
+                "PublicZoneNS3": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[2]]",
+                "PublicZoneNS4": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[3]]"
               },
               "configurationData": {
               },
@@ -759,12 +779,14 @@
         "TTL": 3600,
         "TXTRecords": [
           {
-            "value": "v=spf1 include:spf.protection.outlook.com -all"
+            "value": "[concat('v=spf1 include:spf.protection.outlook.com ip4:', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lclab01exch01PublicName'))).ipAddress, ' -all')]"
           }
         ]
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
+        "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]",
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('lclab01exch01PublicName'))]"
+
       ]
     }
   ],
