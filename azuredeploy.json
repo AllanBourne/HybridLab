@@ -1,23 +1,31 @@
 ﻿{
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
   "parameters": {
-    "labName": {
+    "_artifactsLocation": {
       "type": "string",
       "metadata": {
-        "description": "Pre-pended to the start of all resource names"
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
+    },
+    "labName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 10,
+      "metadata": {
+        "description": "Short lab name to be pre-pended to the start of all resource names (3-10 characters only)"
       }
     },
     "adDomainName": {
       "type": "string",
       "metadata": {
         "description": "Fully qualified domain name for Active Directory and Office 365 (must be a valid external domain not already assigned to a tenant)"
-      }
-    },
-    "adDomainNetbios": {
-      "type": "string",
-      "metadata": {
-        "description": "Netbios name for Active Directory"
       }
     },
     "labAdminUserName": {
@@ -31,6 +39,19 @@
       "type": "securestring",
       "metadata": {
         "description": "Administrative password used for all lab servers and Active Directory domain"
+      }
+    },
+    "ExchangeProductKey": {
+      "type": "string",
+      "defaultValue": "12345-12345-12345-12345",
+      "metadata": {
+        "description": "Exchange Server 2013 Product Key"
+      }
+    },
+    "Office365_Domain_Verification": {
+      "type": "string",
+      "metadata": {
+        "description": "Verification TXT record for domain added to Office 365"
       }
     },
     "vNetPrefix": {
@@ -47,16 +68,6 @@
         "description": "IP address space for subnet"
       }
     },
-    "ExchangeVMSize": {
-      "type": "string",
-      "defaultValue": "Standard_D2",
-      "allowedValues": [
-        "Standard_D2"
-      ],
-      "metadata": {
-        "description": "Exchange VM Size"
-      }
-    },
     "DomainControllerVMSize": {
       "type": "string",
       "defaultValue": "Standard_D2",
@@ -67,42 +78,32 @@
         "description": "Domain Controller VM Size"
       }
     },
-    "ExchangeProductKey": {
+    "ExchangeVMSize": {
       "type": "string",
-      "defaultValue": "12345-12345-12345-12345",
-      "metadata": {
-        "description": "Exchange Server 2013 Product Key"
-      }
-    },
-    "lclab01Type": {
-      "type": "string",
-      "defaultValue": "Standard_LRS",
+      "defaultValue": "Standard_D2",
       "allowedValues": [
-        "Standard_LRS",
-        "Standard_ZRS",
-        "Standard_GRS",
-        "Standard_RAGRS",
-        "Premium_LRS"
+        "Standard_D2"
       ],
       "metadata": {
-        "description": "Storage type"
+        "description": "Exchange VM Size"
       }
     }
-
   },
   "variables": {
     "apiVersion": "2016-04-01",
 
-    "_artifactsLocation": "https://raw.githubusercontent.com/AllanBourne/HybridLab/master",
-    "_artifactsLocationSasToken": "",
-    "lclab01vnetTemplate": "vnet.json",
-    "lclab01vnetwithdnsTemplate": "vnet-with-dns-server.json",
+    "_artifactsLocation": "[parameters('_artifactsLocation')]",
+    "_artifactsLocationSasToken": "[parameters('_artifactsLocationSasToken')]",
+    "lclab01vnetTemplate": "ExchangeHybridLab/Templates/vnet.json",
+    "lclab01vnetwithdnsTemplate": "ExchangeHybridLab/Templates/vnet-with-dns-server.json",
 
     "lclab01Name": "[concat(parameters('labName'), uniqueString(resourceGroup().id))]",
     "lclab01Subnet1Name": "Subnet-1",
     "adDomainDN": "[concat('DC=',replace(parameters('adDomainName'),'.',',DC='))]",
+    "adDomainNetbios": "[split(parameters('adDomainName'),'.')[0]]",
     "lclab01DomainJoinOptions": "3",
     "lclab01vnet01Name": "[concat(parameters('labName'), 'vnet01')]",
+    "lclab01Type": "Standard_LRS",
 
     "DeployADForestConfigurationScript": "DeployADForestConfiguration.ps1",
     "DeployADForestConfigurationScriptFunction": "Main",
@@ -158,7 +159,7 @@
         "displayName": "lclab01"
       },
       "properties": {
-        "accountType": "[parameters('lclab01Type')]"
+        "accountType": "[variables('lclab01Type')]"
       }
     },
     {
@@ -320,7 +321,7 @@
               },
               "configurationArguments": {
                 "domainName": "[parameters('adDomainName')]",
-                "domainNameNetbios": "[parameters('adDomainNetbios')]",
+                "domainNameNetbios": "[variables('adDomainNetbios')]",
                 "domainDN": "[variables('adDomainDN')]",
                 "SourcePathAADConnect": "[variables('SourcePathAADConnect')]",
                 "TargetPathAADConnect": "[variables('TargetPathAADConnect')]"
@@ -601,7 +602,7 @@
               },
               "configurationArguments": {
                 "domainName": "[parameters('adDomainName')]",
-                "domainNameNetbios": "[parameters('adDomainNetbios')]",
+                "domainNameNetbios": "[variables('adDomainNetbios')]",
                 "ExchangeOrgName": "[parameters('labName')]",
                 "ExchangeProductKey": "[parameters('ExchangeProductKey')]",
                 "ExchangeFQDN": "[variables('ExchangeFQDN')]",
@@ -731,6 +732,89 @@
       ]
     },
     {
+      "type": "Microsoft.Network/dnszones/CNAME",
+      "name": "[concat(parameters('adDomainName'), '/sip')]",
+      "apiVersion": "2016-04-01",
+      "location": "global",
+      "tags": {
+        "displayName": "PublicDNS-sip"
+      },
+      "properties": {
+        "TTL": 3600,
+        "CNAMERecord": {
+          "cname": "sipdir.online.lync.com"
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/dnszones/CNAME",
+      "name": "[concat(parameters('adDomainName'), '/lyncdiscover')]",
+      "apiVersion": "2016-04-01",
+      "location": "global",
+      "tags": {
+        "displayName": "PublicDNS-lyncdiscover"
+      },
+      "properties": {
+        "TTL": 3600,
+        "CNAMERecord": {
+          "cname": "webdir.online.lync.com"
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/dnszones/SRV",
+      "name": "[concat(parameters('adDomainName'), '/_sip._tls')]",
+      "apiVersion": "2016-04-01",
+      "location": "global",
+      "tags": {
+        "displayName": "PublicDNS-siptls"
+      },
+      "properties": {
+        "TTL": 3600,
+        "SRVRecords": [
+          {
+            "priority": 100,
+            "weight": 1,
+            "port": 443,
+            "target": "sipdir.online.lync.com"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/dnszones/SRV",
+      "name": "[concat(parameters('adDomainName'), '/_sipfederationtls._tcp')]",
+      "apiVersion": "2016-04-01",
+      "location": "global",
+      "tags": {
+        "displayName": "PublicDNS-sipfederationtcp"
+      },
+      "properties": {
+        "TTL": 3600,
+        "SRVRecords": [
+          {
+            "priority": 100,
+            "weight": 1,
+            "port": 5061,
+            "target": "sipfed.online.lync.com"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]"
+      ]
+    },
+
+    {
       "type": "Microsoft.Network/dnszones/MX",
       "name": "[concat(parameters('adDomainName'), '/@')]",
       "apiVersion": "2016-04-01",
@@ -764,36 +848,39 @@
         "TXTRecords": [
           {
             "value": "[concat('v=spf1 include:spf.protection.outlook.com ip4:', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lclab01exch01PublicName'))).ipAddress, ' -all')]"
+          },
+          {
+            "value": "[parameters('Office365_Domain_Verification')]"
           }
         ]
       },
       "dependsOn": [
         "[concat('Microsoft.Network/dnszones/', parameters('adDomainName'))]",
         "[concat('Microsoft.Network/publicIPAddresses/', variables('lclab01exch01PublicName'))]"
-
       ]
     }
   ],
-  "outputs": {
-    "DNS-Name-Server-1": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[0]]"
-    },
-    "DNS-Name-Server-2": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[1]]"
-    },
-    "DNS-Name-Server-3": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[2]]"
-    },
-    "DNS-Name-Server-4": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[3]]"
-    },
-    "Exchange-External-Address": {
-      "type": "string",
-      "value": "[concat(variables('lclab01exch01Name'), '.', parameters('adDomainName'))]"
+
+    "outputs": {
+      "DNS-Name-Server-1": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[0]]"
+      },
+      "DNS-Name-Server-2": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[1]]"
+      },
+      "DNS-Name-Server-3": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[2]]"
+      },
+      "DNS-Name-Server-4": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[3]]"
+      },
+      "Exchange-External-Address": {
+        "type": "string",
+        "value": "[concat(variables('lclab01exch01Name'), '.', parameters('adDomainName'))]"
+      }
     }
   }
-}
