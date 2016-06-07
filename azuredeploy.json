@@ -610,7 +610,11 @@
                 "targetPathSignInAssistant": "[variables('TargetPathSignInAssistant')]",
                 "GUIDSignInAssistant": "[variables('GUIDSignInAssistant')]",
                 "SourcePathAADPS": "[variables('SourcePathAADPS')]",
-                "TargetPathAADPS": "[variables('TargetPathAADPS')]"
+                "TargetPathAADPS": "[variables('TargetPathAADPS')]",
+                "PublicZoneNS1": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[0]]",
+                "PublicZoneNS2": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[1]]",
+                "PublicZoneNS3": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[2]]",
+                "PublicZoneNS4": "[reference(resourceId('Microsoft.Network/dnsZones', parameters('adDomainName'))).nameServers[3]]"
               },
               "configurationData": {
               },
