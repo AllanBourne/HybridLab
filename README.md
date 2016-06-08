@@ -4,8 +4,9 @@
 
 <p>Includes the following components...</p>
 <ul>
-<li>1 x Domain Controller (includes AAD Connect install) </li>
-<li>1 x Exchange 2013 (includes Azure AD PowerShell tools install)</li>
+<li>Domain Controller (includes AAD Connect install) </li>
+<li>Exchange 2013 (includes Azure AD PowerShell tools install)</li>
+<li>Exchange 2013 Configuration ready for Exchange Hybrid</li>
 <li>Azure Public DNS Zone</li>
 <li>Relevant Azure infrastructure components including network, firewall rules etc</li>
 </ul>
